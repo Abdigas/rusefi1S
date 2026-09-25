@@ -24,6 +24,12 @@ jobs:
             make \
             mtools
 
+      - name: Verify mtools
+        run: |
+          echo "Checking mcopy..."
+          which mcopy
+          mcopy -V
+
       - name: Compile f407-discovery
         working-directory: firmware
         run: |
