@@ -32,3 +32,14 @@ jobs:
         run: |
           chmod +x bin/compile.sh
           ./bin/compile.sh config/boards/f407-discovery/meta-info.env
+
+      - name: Upload firmware artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rusefi-f407-discovery
+          path: |
+            firmware/**/*.bin
+            firmware/**/*.elf
+            firmware/**/*.hex
+          if-no-files-found: warn
+```
