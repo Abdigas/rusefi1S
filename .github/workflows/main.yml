@@ -1,4 +1,3 @@
-```yaml
 name: Build rusEFI Stage 1
 
 on:
