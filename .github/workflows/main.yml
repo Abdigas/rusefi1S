@@ -16,18 +16,16 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            gcc-arm-none-eabi \
-            binutils-arm-none-eabi \
-            libnewlib-arm-none-eabi \
-            make \
-            mtools
+          sudo apt-get install -y gcc-arm-none-eabi
+          sudo apt-get install -y binutils-arm-none-eabi
+          sudo apt-get install -y libnewlib-arm-none-eabi
+          sudo apt-get install -y make
+          sudo apt-get install -y mtools
 
-      - name: Verify mtools
-        run: |
-          echo "Checking mcopy..."
-          which mcopy
+          echo "===== CHECK MCOPY ====="
+          command -v mcopy
           mcopy -V
+          echo "===== MCOPY OK ====="
 
       - name: Compile f407-discovery
         working-directory: firmware
