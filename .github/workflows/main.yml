@@ -32,13 +32,3 @@ jobs:
         run: |
           chmod +x bin/compile.sh
           ./bin/compile.sh config/boards/f407-discovery/meta-info.env
-
-      - name: Show build result
-        run: |
-          echo "Build finished"
-          find firmware -type f \( \
-            -name "*.bin" -o \
-            -name "*.elf" -o \
-            -name "*.hex" \
-          \) -print
-```
