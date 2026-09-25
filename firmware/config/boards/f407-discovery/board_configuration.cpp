@@ -1,5 +1,8 @@
 /**
  * @file board_configuration.cpp
+
+
+ 
  */
 
 #include "pch.h"
@@ -54,6 +57,35 @@ static void configureAccelerometerPins() {
  * @brief	Hardware board-specific default configuration (GPIO pins, ADC channels, SPI configs etc.)
  */
 static void f407_discovery_DefaultConfiguration() {
+
+	/*
+	 * ============================================================
+	 * STAGE 1
+	 * ============================================================
+	 *
+	 * Only change:
+	 * Default engine cylinder count = 1.
+	 *
+	 * Nothing else is changed in this stage.
+	 *
+	 * Trigger:
+	 *     unchanged
+	 *
+	 * ADC:
+	 *     unchanged
+	 *
+	 * SPI:
+	 *     unchanged
+	 *
+	 * Driver IC configuration:
+	 *     unchanged for this compile test
+	 *
+	 * The purpose of Stage 1 is ONLY to verify that the
+	 * one-cylinder configuration compiles successfully.
+	 */
+
+	engineConfiguration->cylindersCount = 1;
+
 	setDefaultFrankensoStepperIdleParameters();
 	setCanFrankensoDefaults();
 
@@ -67,8 +99,6 @@ static void f407_discovery_DefaultConfiguration() {
 	// this would override some values from above
 	configureAccelerometerPins();
 #endif /* EFI_ONBOARD_MEMS */
-
-
 
 	engineConfiguration->map.sensor.hwChannel = EFI_ADC_4;
 	engineConfiguration->clt.adcChannel = EFI_ADC_6;
@@ -101,8 +131,6 @@ static void f407_discovery_DefaultConfiguration() {
 	engineConfiguration->spi3mosiPin = Gpio::B5;
 	engineConfiguration->spi3misoPin = Gpio::B4;
 	engineConfiguration->spi3sckPin = Gpio::B3;
-
-
 
 #if EFI_FILE_LOGGING
 	setDefaultSdCardParameters();
