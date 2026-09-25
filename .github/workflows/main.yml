@@ -1,3 +1,4 @@
+```yaml
 name: Build rusEFI Stage 1
 
 on:
@@ -20,7 +21,8 @@ jobs:
             gcc-arm-none-eabi \
             binutils-arm-none-eabi \
             libnewlib-arm-none-eabi \
-            make
+            make \
+            mtools
 
       - name: Compile f407-discovery
         working-directory: firmware
@@ -36,3 +38,4 @@ jobs:
             -name "*.elf" -o \
             -name "*.hex" \
           \) -print
+```
