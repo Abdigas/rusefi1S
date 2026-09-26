@@ -1,44 +1,5 @@
-name: Build rusEFI Stage 1
-
-on:
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout source
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-
-      - name: Install build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y gcc-arm-none-eabi
-          sudo apt-get install -y binutils-arm-none-eabi
-          sudo apt-get install -y libnewlib-arm-none-eabi
-          sudo apt-get install -y make
-          sudo apt-get install -y mtools
-
-          echo "===== CHECK MCOPY ====="
-          command -v mcopy
-          mcopy -V
-          echo "===== MCOPY OK ====="
-
-      - name: Compile f407-discovery
-        working-directory: firmware
-        run: |
-          chmod +x bin/compile.sh
-          ./bin/compile.sh config/boards/f407-discovery/meta-info.env
-
-      - name: Upload firmware artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: rusefi-f407-discovery
-          path: |
-            firmware/**/*.bin
-            firmware/**/*.elf
-            firmware/**/*.hex
-          if-no-files-found: warn
+- name: Compile devebox-f407
+  working-directory: firmware
+  run: |
+    chmod +x bin/compile.sh
+    ./bin/compile.sh config/boards/devebox-f407/meta-info.env
