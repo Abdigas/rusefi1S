@@ -27,6 +27,21 @@ jobs:
           mcopy -V
           echo "===== MCOPY OK ====="
 
+      - name: Check custom board files
+        working-directory: firmware
+        run: |
+          echo "===== CURRENT DIRECTORY ====="
+          pwd
+
+          echo "===== BOARDS DIRECTORY ====="
+          ls -la config/boards/
+
+          echo "===== DEVBOX DIRECTORY ====="
+          ls -la config/boards/devebox-f407/
+
+          echo "===== META INFO ====="
+          cat config/boards/devebox-f407/meta-info.env
+
       - name: Compile devebox-f407
         working-directory: firmware
         run: |
