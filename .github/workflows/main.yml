@@ -22,11 +22,6 @@ jobs:
           sudo apt-get install -y make
           sudo apt-get install -y mtools
 
-          echo "===== CHECK MCOPY ====="
-          command -v mcopy
-          mcopy -V
-          echo "===== MCOPY OK ====="
-
       - name: Check custom board files
         working-directory: firmware
         run: |
