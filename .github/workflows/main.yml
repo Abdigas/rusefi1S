@@ -1,5 +1,5 @@
-- name: Compile devebox-f407
-  working-directory: firmware
-  run: |
-    chmod +x bin/compile.sh
-    ./bin/compile.sh config/boards/devebox-f407/meta-info.env
+      - name: Compile devebox-f407
+        working-directory: firmware
+        run: |
+          chmod +x bin/compile.sh
+          ./bin/compile.sh config/boards/devebox-f407/meta-info.env
