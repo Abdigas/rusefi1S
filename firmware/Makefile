@@ -1,76 +1,122 @@
-# List of all the board related files.
-BOARDCPPSRC = $(BOARD_DIR)/board_configuration.cpp
+# rusEFI Firmware Makefile
+#
+# This is the main firmware build file.
+# Board-specific settings belong in:
+# config/boards/<board>/board.mk
 
-# MCU defines
-DDEFS += -DSTM32F407xx
+PROJECT_DIR := $(abspath .)
 
-ifeq ($(VAR_DEF_ENGINE_TYPE),)
-  VAR_DEF_ENGINE_TYPE = -DDEFAULT_ENGINE_TYPE=engine_type_e::DEFAULT_FRANKENSO
-endif
+CHIBIOS = ChibiOS
 
-# here we use different names for env variable and macro name
-# in order to reduce confusion. overall this is about Frankenso
-# builds defining FIRMWARE_ID
-ifeq ($(FW_ID_ENV),)
-  DDEFS += -DFIRMWARE_ID=\"community\"
+RULESPATH = $(PROJECT_DIR)/$(CHIBIOS)/os/common/startup/ARMCMx/compilers/GCC
+RULESFILE = $(RULESPATH)/rules.mk
+
+# ------------------------------------------------------------
+# Common firmware configuration
+# ------------------------------------------------------------
+
+include $(PROJECT_DIR)/common_libfirmware.mk
+include rusefi.mk
+
+# ------------------------------------------------------------
+# Default compiler configuration
+# ------------------------------------------------------------
+
+DEBUG ?= no
+
+ifeq ($(DEBUG),yes)
+	OPT = -Og
+	DDEFS += -DDEBUG
 else
-  DDEFS += -D$(FW_ID_ENV)
+	OPT = -Os
 endif
 
-BUNDLE_OPENOCD = yes
+# ------------------------------------------------------------
+# Board selection
+# ------------------------------------------------------------
 
-# User can configure LIN/K-line interface
-#DDEFS += -DEFI_KLINE=TRUE
-#DDEFS += -DKLINE_SERIAL_DEVICE_RX=C11 -DKLINE_SERIAL_DEVICE_TX=C10
-#DDEFS += -DKLINE_SERIAL_DEVICE=SD3
-
-# DAC channel1 PA4
-# DAC channel2 PA5
-#DDEFS += -DEFI_DAC=TRUE -DHAL_USE_DAC=TRUE -DSTM32_DAC_USE_DAC1_CH1=TRUE -DSTM32_DAC_USE_DAC1_CH2=TRUE
-
-#DDEFS += -DBOARD_TLE9104_COUNT=2
-
-# EGT chip
-DDEFS += -DEFI_MAX_31855=TRUE
-
-# We are running on Frankenso hardware!
-# KEEP FOR STAGE 1 COMPATIBILITY.
-# These definitions will be removed in a later stage.
-DDEFS += -DHW_FRANKENSO=1
-DDEFS += $(DEFAULT_ENGINE_TYPE)
-
-DDEFS += -DSTM32_ADC_USE_ADC3=TRUE
-
-# todo: make knock pin software-selectable?
-DDEFS += -DEFI_SOFTWARE_KNOCK=TRUE -DSTM32_ADC_USE_ADC3=TRUE
-
-# Reuse the existing F407 Discovery static board ID for Stage 1.
-# This avoids inventing a new board ID before the board structure
-# is fully separated from the Discovery configuration.
-DDEFS += -DSTATIC_BOARD_ID=STATIC_BOARD_ID_F407_DISCOVERY
-
-# TS_SECONDARY_UxART_PORT
-DDEFS += -DSTM32_SERIAL_USE_USART3=TRUE -DSTM32_SERIAL_USART3_PRIORITY=6
-DDEFS += -DTS_SECONDARY_UxART_PORT=SD3 -DEFI_TS_SECONDARY_IS_SERIAL=TRUE
-
-#DDEFS += -DEFI_WS2812=TRUE
-
-ifndef IS_RE_BOOTLOADER
-#DDEFS += -DHAL_USE_EEPROM=TRUE -DSTM32_I2C_USE_I2C3=TRUE
+ifndef BOARD_DIR
+	BOARD_DIR := ./config/boards/f407-discovery
 endif
 
-# This board currently keeps the Discovery MEMS configuration
-# for Stage 1 compilation compatibility.
-DDEFS += -DEFI_ONBOARD_MEMS=TRUE
+BOARD_DIR := ./$(BOARD_DIR)
 
-# Original STM32F4DISCOVERY has LIS302DL
-EFI_ONBOARD_MEMS_LIS302DL = yes
-DDEFS += -DLIS302DL_USE_SPI=TRUE -DLIS302DL_USE_I2C=FALSE -DLIS302DL_SHARED_SPI=TRUE
+# ------------------------------------------------------------
+# Board-specific configuration
+#
+# This loads:
+# config/boards/<board>/board.mk
+# ------------------------------------------------------------
 
-# Later versions of STM32F4DISCOVERY has LIS3DSH
-EFI_ONBOARD_MEMS_LIS3DSH = yes
-DDEFS += -DLIS3DSH_USE_SPI=TRUE -DLIS3DSH_USE_I2C=FASLE -DLIS3DSH_SHARED_SPI=TRUE
+include $(BOARD_DIR)/board.mk
 
-# Some custom boards have LIS2DW12TR
-EFI_ONBOARD_MEMS_LIS2DW12 = yes
-DDEFS += -DLIS2DW12_USE_SPI=TRUE -DLIS2DW12_SHARED_SPI=TRUE
+# ------------------------------------------------------------
+# rusEFI rules
+# ------------------------------------------------------------
+
+include rusefi_rules.mk
+
+# ------------------------------------------------------------
+# ChibiOS startup
+# ------------------------------------------------------------
+
+include $(CHIBIOS)/os/common/startup/ARMCMx/compilers/GCC/Makefile.inc
+
+# ------------------------------------------------------------
+# Common source configuration
+# ------------------------------------------------------------
+
+include $(PROJECT_DIR)/common.mk
+
+# ------------------------------------------------------------
+# Controller modules
+# ------------------------------------------------------------
+
+include $(PROJECT_DIR)/controllers/modules/modules.mk
+
+# ------------------------------------------------------------
+# Compiler tools
+# ------------------------------------------------------------
+
+CC = arm-none-eabi-gcc
+CXX = arm-none-eabi-g++
+AS = arm-none-eabi-gcc
+AR = arm-none-eabi-ar
+OBJCOPY = arm-none-eabi-objcopy
+OBJDUMP = arm-none-eabi-objdump
+SIZE = arm-none-eabi-size
+
+# ------------------------------------------------------------
+# Build rules
+# ------------------------------------------------------------
+
+include $(RULESFILE)
+
+# ------------------------------------------------------------
+# rusEFI configuration
+# ------------------------------------------------------------
+
+include target_sentinel.mk
+include rusefi_config.mk
+include docs_enums.mk
+include rusefi_pch.mk
+
+# ------------------------------------------------------------
+# Firmware bundle
+# ------------------------------------------------------------
+
+include bundle.mk
+
+# ------------------------------------------------------------
+# Board source
+# ------------------------------------------------------------
+
+CPPSRC += $(BOARDCPPSRC)
+
+# ------------------------------------------------------------
+# OpenBLT
+# ------------------------------------------------------------
+
+ifeq ($(USE_OPENBLT),yes)
+	DDEFS += -DUSE_OPENBLT
+endif
