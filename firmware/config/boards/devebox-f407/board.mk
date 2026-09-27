@@ -1,14 +1,39 @@
+# List of all the board related files.
 BOARDCPPSRC = $(BOARD_DIR)/board_configuration.cpp
 
+# MCU defines
 DDEFS += -DSTM32F407xx
 
 ifeq ($(VAR_DEF_ENGINE_TYPE),)
   VAR_DEF_ENGINE_TYPE = -DDEFAULT_ENGINE_TYPE=engine_type_e::DEFAULT_FRANKENSO
 endif
 
+# Firmware ID
+ifeq ($(FW_ID_ENV),)
+  DDEFS += -DFIRMWARE_ID=\"community\"
+else
+  DDEFS += -D$(FW_ID_ENV)
+endif
+
+# OpenOCD bundle
+BUNDLE_OPENOCD = yes
+
+# We are using the STM32F407 hardware base
 DDEFS += -DHW_FRANKENSO=1
 DDEFS += $(DEFAULT_ENGINE_TYPE)
 
-BUNDLE_OPENOCD = yes
-
+# ADC support
 DDEFS += -DSTM32_ADC_USE_ADC3=TRUE
+
+# Software knock support
+DDEFS += -DEFI_SOFTWARE_KNOCK=TRUE
+DDEFS += -DSTM32_ADC_USE_ADC3=TRUE
+
+# Board ID
+DDEFS += -DSTATIC_BOARD_ID=STATIC_BOARD_ID_F407_DISCOVERY
+
+# USART3 support
+DDEFS += -DSTM32_SERIAL_USE_USART3=TRUE
+DDEFS += -DSTM32_SERIAL_USART3_PRIORITY=6
+DDEFS += -DTS_SECONDARY_UxART_PORT=SD3
+DDEFS += -DEFI_TS_SECONDARY_IS_SERIAL=TRUE
