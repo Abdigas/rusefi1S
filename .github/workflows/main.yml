@@ -57,6 +57,28 @@ jobs:
           echo "===== CHECK SHORT_BOARD_NAME ====="
           grep -n "SHORT_BOARD_NAME" config/boards/devebox-f407/meta-info.env || true
 
+      - name: Diagnose make
+        working-directory: firmware
+        run: |
+          echo "===== MAKEFILE ====="
+          ls -l Makefile
+
+          echo "===== BOARD MK ====="
+          ls -l config/boards/devebox-f407/board.mk
+
+          echo "===== META INFO ====="
+          cat config/boards/devebox-f407/meta-info.env
+
+          echo "===== MAKE VERSION ====="
+          make --version
+
+          echo "===== MAKE TARGET CHECK ====="
+          make -qp \
+            PROJECT_BOARD=devebox-f407 \
+            PROJECT_CPU=ARCH_STM32F4 \
+            BOARD_DIR=config/boards/devebox-f407 \
+            2>&1 | grep -E '^(all|bundle|config|docs-enums|bootloader|clean):' | head -30 || true
+
       - name: Compile devebox-f407
         working-directory: firmware
         run: |
