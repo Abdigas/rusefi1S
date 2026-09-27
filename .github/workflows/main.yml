@@ -63,6 +63,12 @@ jobs:
           echo "===== MAKEFILE ====="
           ls -l Makefile
 
+          echo "===== MAKEFILE FIRST 30 LINES ====="
+          head -30 Makefile
+
+          echo "===== MAKEFILE LAST 30 LINES ====="
+          tail -30 Makefile
+
           echo "===== BOARD MK ====="
           ls -l config/boards/devebox-f407/board.mk
 
