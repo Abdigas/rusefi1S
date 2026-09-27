@@ -42,6 +42,21 @@ jobs:
           echo "===== META INFO ====="
           cat config/boards/devebox-f407/meta-info.env
 
+      - name: Check meta-info content
+        working-directory: firmware
+        run: |
+          echo "===== META-INFO FILE CONTENT ====="
+          cat config/boards/devebox-f407/meta-info.env
+
+          echo "===== BOARD DIRECTORY CONTENT ====="
+          ls -la config/boards/devebox-f407/
+
+          echo "===== CHECK PROJECT_BOARD ====="
+          grep -n "PROJECT_BOARD" config/boards/devebox-f407/meta-info.env || true
+
+          echo "===== CHECK SHORT_BOARD_NAME ====="
+          grep -n "SHORT_BOARD_NAME" config/boards/devebox-f407/meta-info.env || true
+
       - name: Compile devebox-f407
         working-directory: firmware
         run: |
