@@ -8,14 +8,49 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
+      # ============================================================
+      # 1. CHECKOUT SOURCE
+      # ============================================================
       - name: Checkout source
         uses: actions/checkout@v4
         with:
           submodules: recursive
 
+      # ============================================================
+      # 2. IDENTIFY GIT VERSION
+      # ============================================================
+      - name: Identify Git revision
+        run: |
+          echo "============================================================"
+          echo "                 GIT REVISION CHECK"
+          echo "============================================================"
+
+          echo "===== CURRENT DIRECTORY ====="
+          pwd
+
+          echo "===== GIT ROOT ====="
+          git rev-parse --show-toplevel
+
+          echo "===== CURRENT BRANCH ====="
+          git branch --show-current
+
+          echo "===== CURRENT COMMIT ====="
+          git rev-parse HEAD
+
+          echo "===== LAST COMMIT ====="
+          git log -1 --oneline
+
+          echo "===== GIT STATUS ====="
+          git status --short
+
+      # ============================================================
+      # 3. INSTALL BUILD DEPENDENCIES
+      # ============================================================
       - name: Install build dependencies
         run: |
           sudo apt-get update
+
           sudo apt-get install -y gcc-arm-none-eabi
           sudo apt-get install -y binutils-arm-none-eabi
           sudo apt-get install -y libnewlib-arm-none-eabi
@@ -25,11 +60,19 @@ jobs:
           echo "===== CHECK MCOPY ====="
           command -v mcopy
           mcopy -V
+
           echo "===== MCOPY OK ====="
 
+      # ============================================================
+      # 4. CHECK CUSTOM BOARD DIRECTORY
+      # ============================================================
       - name: Check custom board files
         working-directory: firmware
         run: |
+          echo "============================================================"
+          echo "                 CUSTOM BOARD CHECK"
+          echo "============================================================"
+
           echo "===== CURRENT DIRECTORY ====="
           pwd
 
@@ -42,9 +85,22 @@ jobs:
           echo "===== META INFO ====="
           cat config/boards/devebox-f407/meta-info.env
 
+          echo "===== BOARD MK ====="
+          cat config/boards/devebox-f407/board.mk
+
+          echo "===== BOARD CONFIGURATION CPP ====="
+          cat config/boards/devebox-f407/board_configuration.cpp
+
+      # ============================================================
+      # 5. CHECK META INFO
+      # ============================================================
       - name: Check meta-info content
         working-directory: firmware
         run: |
+          echo "============================================================"
+          echo "                 META INFO CHECK"
+          echo "============================================================"
+
           echo "===== META-INFO FILE CONTENT ====="
           cat config/boards/devebox-f407/meta-info.env
 
@@ -52,45 +108,207 @@ jobs:
           ls -la config/boards/devebox-f407/
 
           echo "===== CHECK PROJECT_BOARD ====="
-          grep -n "PROJECT_BOARD" config/boards/devebox-f407/meta-info.env || true
+          grep -n "PROJECT_BOARD" \
+            config/boards/devebox-f407/meta-info.env || true
 
           echo "===== CHECK SHORT_BOARD_NAME ====="
-          grep -n "SHORT_BOARD_NAME" config/boards/devebox-f407/meta-info.env || true
+          grep -n "SHORT_BOARD_NAME" \
+            config/boards/devebox-f407/meta-info.env || true
 
+          echo "===== CHECK PROJECT_CPU ====="
+          grep -n "PROJECT_CPU" \
+            config/boards/devebox-f407/meta-info.env || true
+
+          echo "===== CHECK USE_OPENBLT ====="
+          grep -n "USE_OPENBLT" \
+            config/boards/devebox-f407/meta-info.env || true
+
+      # ============================================================
+      # 6. DEEP MAKEFILE DIAGNOSTIC
+      # ============================================================
       - name: Diagnose make
         working-directory: firmware
         run: |
-          echo "===== MAKEFILE ====="
-          ls -l Makefile
+          echo "============================================================"
+          echo "                 MAKEFILE DIAGNOSTIC"
+          echo "============================================================"
 
-          echo "===== MAKEFILE FIRST 30 LINES ====="
-          head -30 Makefile
+          echo "===== CURRENT DIRECTORY ====="
+          pwd
 
-          echo "===== MAKEFILE LAST 30 LINES ====="
-          tail -30 Makefile
+          echo "===== GIT ROOT ====="
+          git rev-parse --show-toplevel
 
-          echo "===== BOARD MK ====="
-          ls -l config/boards/devebox-f407/board.mk
+          echo "===== GIT COMMIT ====="
+          git rev-parse HEAD
 
-          echo "===== META INFO ====="
-          cat config/boards/devebox-f407/meta-info.env
+          echo "===== LAST COMMIT ====="
+          git log -1 --oneline
 
-          echo "===== MAKE VERSION ====="
+          echo ""
+          echo "============================================================"
+          echo "                 MAKEFILE PATH"
+          echo "============================================================"
+
+          echo "===== MAKEFILE LS ====="
+          ls -lh Makefile
+
+          echo "===== MAKEFILE REAL PATH ====="
+          realpath Makefile
+
+          echo "===== MAKEFILE FILE TYPE ====="
+          file Makefile
+
+          echo "===== MAKEFILE SHA256 ====="
+          sha256sum Makefile
+
+          echo ""
+          echo "============================================================"
+          echo "                 GIT MAKEFILE INFORMATION"
+          echo "============================================================"
+
+          echo "===== GIT LS-FILES ====="
+          git ls-files -s firmware/Makefile
+
+          echo "===== GIT HASH OBJECT ====="
+          git hash-object Makefile
+
+          echo ""
+          echo "============================================================"
+          echo "                 MAKEFILE FROM GIT HEAD"
+          echo "============================================================"
+
+          echo "===== HEAD MAKEFILE SIZE ====="
+          git cat-file -s HEAD:firmware/Makefile
+
+          echo "===== HEAD MAKEFILE FIRST 40 LINES ====="
+          git show HEAD:firmware/Makefile | head -40
+
+          echo ""
+          echo "===== HEAD MAKEFILE LAST 40 LINES ====="
+          git show HEAD:firmware/Makefile | tail -40
+
+          echo ""
+          echo "============================================================"
+          echo "                 WORKSPACE MAKEFILE"
+          echo "============================================================"
+
+          echo "===== WORKSPACE MAKEFILE FIRST 40 LINES ====="
+          head -40 Makefile
+
+          echo ""
+          echo "===== WORKSPACE MAKEFILE LAST 40 LINES ====="
+          tail -40 Makefile
+
+          echo ""
+          echo "============================================================"
+          echo "                 MAKEFILE SIZE COMPARISON"
+          echo "============================================================"
+
+          echo "===== WORKSPACE SIZE ====="
+          wc -c Makefile
+
+          echo "===== GIT HEAD SIZE ====="
+          git show HEAD:firmware/Makefile | wc -c
+
+          echo ""
+          echo "============================================================"
+          echo "                 BOARD MK"
+          echo "============================================================"
+
+          echo "===== BOARD MK SIZE ====="
+          wc -c config/boards/devebox-f407/board.mk
+
+          echo "===== BOARD MK HASH ====="
+          sha256sum config/boards/devebox-f407/board.mk
+
+          echo ""
+          echo "===== BOARD MK CONTENT ====="
+          cat config/boards/devebox-f407/board.mk
+
+          echo ""
+          echo "============================================================"
+          echo "                 OTHER MAKE FILES"
+          echo "============================================================"
+
+          echo "===== target_sentinel.mk ====="
+          ls -lh target_sentinel.mk || true
+
+          echo "===== rusefi_config.mk ====="
+          ls -lh rusefi_config.mk || true
+
+          echo "===== docs_enums.mk ====="
+          ls -lh docs_enums.mk || true
+
+          echo "===== rusefi_pch.mk ====="
+          ls -lh rusefi_pch.mk || true
+
+          echo "===== bundle.mk ====="
+          ls -lh bundle.mk || true
+
+          echo "===== rusefi_rules.mk ====="
+          ls -lh rusefi_rules.mk || true
+
+          echo "===== common_libfirmware.mk ====="
+          ls -lh common_libfirmware.mk || true
+
+          echo ""
+          echo "============================================================"
+          echo "                 CHIBIOS RULES"
+          echo "============================================================"
+
+          ls -lh \
+            ChibiOS/os/common/startup/ARMCMx/compilers/GCC/mk/rules.mk \
+            || true
+
+          echo ""
+          echo "============================================================"
+          echo "                 MAKE VERSION"
+          echo "============================================================"
+
           make --version
 
-          echo "===== MAKE TARGET CHECK ====="
+          echo ""
+          echo "============================================================"
+          echo "                 MAKE TARGET CHECK"
+          echo "============================================================"
+
           make -qp \
             PROJECT_BOARD=devebox-f407 \
             PROJECT_CPU=ARCH_STM32F4 \
             BOARD_DIR=config/boards/devebox-f407 \
-            2>&1 | grep -E '^(all|bundle|config|docs-enums|bootloader|clean):' | head -30 || true
+            2>&1 \
+            | grep -E '^(all|bundle|config|docs-enums|bootloader|clean):' \
+            | head -30 || true
 
+          echo ""
+          echo "============================================================"
+          echo "                 MAKE DRY RUN"
+          echo "============================================================"
+
+          make -n \
+            PROJECT_BOARD=devebox-f407 \
+            PROJECT_CPU=ARCH_STM32F4 \
+            BOARD_DIR=config/boards/devebox-f407
+
+      # ============================================================
+      # 7. COMPILE CUSTOM BOARD
+      # ============================================================
       - name: Compile devebox-f407
         working-directory: firmware
         run: |
-          chmod +x bin/compile.sh
-          ./bin/compile.sh config/boards/devebox-f407/meta-info.env
+          echo "============================================================"
+          echo "                 COMPILE DEVBOX-F407"
+          echo "============================================================"
 
+          chmod +x bin/compile.sh
+
+          ./bin/compile.sh \
+            config/boards/devebox-f407/meta-info.env
+
+      # ============================================================
+      # 8. UPLOAD FIRMWARE ARTIFACTS
+      # ============================================================
       - name: Upload firmware artifacts
         uses: actions/upload-artifact@v4
         with:
