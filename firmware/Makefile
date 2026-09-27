@@ -1,3 +1,4 @@
+```make
 ##############################################################################
 # see readme.md
 # see setup_linux_environment.sh but Windows is also totally fine
@@ -24,13 +25,13 @@
 #
 # If you wish to call make directly, here are the available commands:
 #
-# make docs-enums	Generate docs and enums
-# make config			Generate docs, enums, and configs
-# make						Generate docs, enums, configs, and build firmware
-# make bundle			Generate docs, enums, configs, build bootloader, build firmware, and package full bundle
-# make autoupdate	Generate docs, enums, configs, build bootloader, build firmware, and package autoupdate bundle
-# make bundles		Generate docs, enums, configs, build bootloader, build firmware, and package both full and autoupdate bundles
-# make bootloader Generate docs, enums, configs, and build bootloader
+# make docs-enums    Generate docs and enums
+# make config        Generate docs, enums, and configs
+# make               Generate docs, enums, configs, and build firmware
+# make bundle        Generate docs, enums, configs, build bootloader, build firmware, and package full bundle
+# make autoupdate    Generate docs, enums, configs, build bootloader, build firmware, and package autoupdate bundle
+# make bundles       Generate docs, enums, configs, build bootloader, build firmware, and package both full and autoupdate bundles
+# make bootloader    Generate docs, enums, configs, and build bootloader
 # make ../simulator/build/rusefi_simulator.exe build Windows simulator (even if invoked on Linux)
 # bin/compile.sh config/boards/f407-discovery/meta-info.env ../simulator/build/rusefi_simulator.linux build Linux simulator
 # make ../simulator/build/rusefi_simulator.both build _both_ Windows and Linux simulator (do we need that? shall we drop that?)
@@ -68,7 +69,7 @@ include $(PROJECT_DIR)/common_libfirmware.mk
 include rusefi.mk
 
 ifeq ($(DEBUG_LEVEL_OPT),)
-  # Default to a release build - but leave in debug info.  It doesn't change the hex/bin output.
+  # Default to a release build - but leave in debug info. It doesn't change the hex/bin output.
   DEBUG_LEVEL_OPT = -Os -ggdb -g
   # Comment the above and uncomment the line below if you want to debug the firmware (it's difficult-to-impossible
   # to debug firmware with optimization enabled).
@@ -81,7 +82,7 @@ endif
 # yes we have two kinds of EXTRA_*PARAMS so that we can define those in two different places independently
 #
 ifeq ($(USE_OPT),)
-  USE_OPT = $(EXTRA_PARAMS) $(EXTRA_2_PARAMS) $(EXTRA_3_PARAMS) $(DEBUG_LEVEL_OPT) $(RFLAGS) -fomit-frame-pointer -fsingle-precision-constant  -fno-inline-functions
+  USE_OPT = $(EXTRA_PARAMS) $(EXTRA_2_PARAMS) $(EXTRA_3_PARAMS) $(DEBUG_LEVEL_OPT) $(RFLAGS) -fomit-frame-pointer -fsingle-precision-constant -fno-inline-functions
 endif
 
 # EFI_UNIT_TEST determines if we are running in a unit test (hide things from hw/sim)
@@ -200,11 +201,13 @@ BOARD_DIR := ./$(BOARD_DIR)
 BOARDINC = $(BOARD_DIR)
 include $(BOARD_DIR)/board.mk
 BOARDCPPSRC += $(BOARDS_DIR)/board_id.cpp
+
 ifeq (,$(filter clean,$(MAKECMDGOALS)))
 ifeq ($(SHORT_BOARD_NAME),)
 $(error SHORT_BOARD_NAME not set, something wrong with your meta-info.env file)
 endif
 endif
+
 DDEFS += -DSHORT_BOARD_NAME=$(SHORT_BOARD_NAME)
 
 # TS-page guard flags (see [tag:ts_page_table]) are declared once in the board's
@@ -228,30 +231,37 @@ include rusefi_rules.mk
 
 # Startup files.
 include $(CPU_STARTUP_DIR)
+
 # HAL-OSAL files (optional).
 include $(CHIBIOS_CONTRIB)/os/hal/hal.mk
 include $(CPU_PLATFORM)
 include $(CHIBIOS)/os/hal/osal/rt-nil/osal.mk
+
 # RTOS files (optional).
 include $(CHIBIOS)/os/rt/rt.mk
 include $(CHIBIOS)/os/common/ports/ARMv7-M/compilers/GCC/mk/port.mk
+
 # EX files (optional).
 ifeq ($(EFI_ONBOARD_MEMS_LIS2DW12),yes)
   DDEFS += -DEFI_ONBOARD_MEMS_LIS2DW12=TRUE
   include $(CHIBIOS)/os/ex/devices/ST/lis2dw12.mk
 endif
+
 ifeq ($(EFI_ONBOARD_MEMS_LIS2DH12),yes)
   DDEFS += -DEFI_ONBOARD_MEMS_LIS2DH12=TRUE
   include $(CHIBIOS)/os/ex/devices/ST/lsm303agr.mk
 endif
+
 ifeq ($(EFI_ONBOARD_MEMS_LIS302DL),yes)
   DDEFS += -DEFI_ONBOARD_MEMS_LIS302DL=TRUE
   include $(CHIBIOS)/os/ex/devices/ST/lis302dl.mk
 endif
+
 ifeq ($(EFI_ONBOARD_MEMS_LIS3DSH),yes)
   DDEFS += -DEFI_ONBOARD_MEMS_LIS3DSH=TRUE
   include $(CHIBIOS)/os/ex/devices/ST/lis3dsh.mk
 endif
+
 include $(CHIBIOS)/os/hal/lib/streams/streams.mk
 include $(CHIBIOS)/os/various/cpp_wrappers/chcpp.mk
 include $(CHIBIOS)/os/hal/lib/complex/mfs/hal_mfs.mk
@@ -261,8 +271,9 @@ ifeq ($(USE_FATFS),yes)
   include $(CHIBIOS)/os/various/fatfs_bindings/fatfs.mk
 endif
 
-#Now include RusEFI mk files
+# Now include RusEFI mk files
 include console/binary/tunerstudio.mk
+
 ifeq ($(USE_FATFS),yes)
   include $(PROJECT_DIR)/ext/FatFS/fatfs.mk
 endif
@@ -307,7 +318,7 @@ $(info LDSCRIPT:      $(LDSCRIPT))
 # C sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
 # gcc_version_check.c goes first to throw error as soon as possible
-CSRC =  gcc_version_check.c \
+CSRC = gcc_version_check.c \
   $(ALLCSRC) \
   $(BOARDSRC) \
   $(CHIBIOS_CONTRIB)/os/various/ramdisk.c \
@@ -346,13 +357,9 @@ ACSRC =
 ACPPSRC =
 
 # C sources to be compiled in THUMB mode regardless of the global setting.
-# NOTE: Mixing ARM and THUMB mode enables the -mthumb-interwork compiler
-#       option that results in lower performance and larger code size.
 TCSRC =
 
-# C sources to be compiled in THUMB mode regardless of the global setting.
-# NOTE: Mixing ARM and THUMB mode enables the -mthumb-interwork compiler
-#       option that results in lower performance and larger code size.
+# C++ sources to be compiled in THUMB mode regardless of the global setting.
 TCPPSRC =
 
 # List ASM source files here
@@ -393,20 +400,25 @@ ifeq ($(CROSS_COMPILE),)
 else
   TRGT = $(CROSS_COMPILE)
 endif
+
 CC   = $(TRGT)gcc
 CPPC = $(TRGT)g++
+
 # Enable loading with g++ only if you need C++ runtime support.
 # NOTE: You can use C++ even without C++ support if you are careful. C++
-#       runtime support makes code size explode.
+# runtime support makes code size explode.
 LD   = $(CC)
 #LD   = $(CPPC)
+
 CP   = $(TRGT)objcopy
 AS   = $(CC) -x assembler-with-cpp
 AR   = $(TRGT)ar
 OD   = $(TRGT)objdump
 SZ   = $(TRGT)size
+
 HEX  = $(CP) -O ihex
 BIN  = $(CP) -O binary
+
 ifneq ($(BOARD_IMAGE_SCRIPT),)
 PYTHON ?= python3
 # Addressed images only: a raw binary cannot preserve holes between CRC domains.
@@ -415,6 +427,7 @@ BIN = $(PYTHON) $(BOARD_IMAGE_SCRIPT) --format bin
 override OUTFILES = $(BUILDDIR)/$(PROJECT).elf $(BUILDDIR)/$(PROJECT).hex \
   $(BUILDDIR)/$(PROJECT).srec $(BUILDDIR)/$(PROJECT).dmp $(BUILDDIR)/$(PROJECT).list
 endif
+
 # for srec files see bundle.mk
 
 # ARM-specific options here
@@ -459,6 +472,7 @@ ULIBS = -lm --specs=nano.specs -Wl,--sort-section=alignment
 include $(RULESFILE)
 
 $(BUILDDIR)/$(PROJECT).elf: $(LDSCRIPT_DEPS)
+
 ifneq ($(BOARD_IMAGE_SCRIPT),)
 $(BUILDDIR)/$(PROJECT).hex $(BUILDDIR)/$(PROJECT).srec: $(BOARD_IMAGE_SCRIPT)
 endif
@@ -487,4 +501,5 @@ POST_MAKE_ALL_RULE_HOOK: $(BUILDDIR)/$(PROJECT).elf $(GCC_MAP_READER_JAR)
 	@java -jar $(GCC_MAP_READER_JAR) $(BUILDDIR)/$(PROJECT).map | grep Total
 	@$(TRGT)objdump -h $(BUILDDIR)/$(PROJECT).elf | grep -w ram4
 
-VPATH     = $(patsubst ./%,%,$(SRCPATHS))
+VPATH = $(patsubst ./%,%,$(SRCPATHS))
+```
