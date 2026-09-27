@@ -69,64 +69,37 @@ include $(PROJECT_DIR)/common_libfirmware.mk
 include rusefi.mk
 
 ifeq ($(DEBUG_LEVEL_OPT),)
-  # Default to a release build - but leave in debug info. It doesn't change the hex/bin output.
   DEBUG_LEVEL_OPT = -Os -ggdb -g
-  # Comment the above and uncomment the line below if you want to debug the firmware (it's difficult-to-impossible
-  # to debug firmware with optimization enabled).
-  # DEBUG_LEVEL_OPT = -O0 -ggdb -g
-  # without optimization many configurations do not fit into flash. Compiling without Lua is one of the way to get a debug image
-  # DEBUG_LEVEL_OPT += -DEFI_LUA=FALSE
 endif
 
-# Compiler options here.
-# yes we have two kinds of EXTRA_*PARAMS so that we can define those in two different places independently
-#
 ifeq ($(USE_OPT),)
   USE_OPT = $(EXTRA_PARAMS) $(EXTRA_2_PARAMS) $(EXTRA_3_PARAMS) $(DEBUG_LEVEL_OPT) $(RFLAGS) -fomit-frame-pointer -fsingle-precision-constant -fno-inline-functions
 endif
 
-# EFI_UNIT_TEST determines if we are running in a unit test (hide things from hw/sim)
-# EFI_PROD_CODE determines if we are running on real hardware (hide things from tests/sim)
-# EFI_SIMULATOR determines if we are running in the simulator (hide things from hw/tests)
 USE_OPT += $(RUSEFI_OPT) -DEFI_UNIT_TEST=0 -DEFI_PROD_CODE=1 -DEFI_SIMULATOR=0
-
-# signalling to libfirmware that we have criticalError() method
 USE_OPT += -DWE_HAVE_CRITICAL_ERROR_METHOD
 
-# C specific options here (added to USE_OPT).
 ifeq ($(USE_COPT),)
   USE_COPT = -fgnu89-inline -std=gnu99 -Wno-error=implicit-fallthrough
 endif
 
-# C++ specific options here (added to USE_OPT).
 ifeq ($(USE_CPPOPT),)
   USE_CPPOPT  = -std=c++20 -Wno-register -fno-rtti -fno-threadsafe-statics -fno-exceptions -fno-use-cxa-atexit
-  # gcc-10 c++ 20 depricated uses of volatile errors
   USE_CPPOPT += -Wno-deprecated
 endif
 
-# Hellen is one of the boards which cares
 USE_CPPOPT += -Wno-error=tautological-compare
-
 USE_CPPOPT += $(RUSEFI_CPPOPT)
 
-# Enable this if you want the linker to remove unused code and data
 ifeq ($(USE_LINK_GC),)
   USE_LINK_GC = yes
 endif
 
-# Linker extra options here.
 ifeq ($(USE_LDOPT),)
   USE_LDOPT = --print-memory-usage
 endif
 
-# Enable this if you want link time optimizations (LTO)
 ifeq ($(USE_LTO),)
-  # ChibiOS has not yet migrated to gcc12 syntax of '-flto' thus some weird code here
-  #
-  # drama: in case of 'syntax error near unexpected token' on Windows either comment out the two lines below
-  # or just more your GCC into a folder without spaces in the path like 'C:\stuff\arm-gcc-12.2'
-  #
   USE_LTO = no
   USE_OPT += -flto=auto
 endif
@@ -137,19 +110,14 @@ else
    USE_OPT += -DIS_WINDOWS_COMPILER=0
 endif
 
-# If enabled, this option allows to compile the application in THUMB mode.
 ifeq ($(USE_THUMB),)
   USE_THUMB = yes
 endif
 
-# Enable this if you want to see the full log while compiling.
 ifeq ($(USE_VERBOSE_COMPILE),)
   USE_VERBOSE_COMPILE = no
 endif
 
-# If enabled, this option makes the build process faster by not compiling
-# modules not used in the current configuration.
-# without USE_SMART_BUILD all ChibiOS (including all drivers) are built. And all drivers includes get included.
 ifeq ($(USE_SMART_BUILD),)
   USE_SMART_BUILD = no
 endif
@@ -170,24 +138,16 @@ endif
 # Architecture or project specific options
 #
 
-# Stack size to be allocated to the Cortex-M process stack. This stack is
-# the stack used by the main() thread.
 ifeq ($(USE_PROCESS_STACKSIZE),)
   USE_PROCESS_STACKSIZE = 0x0600
 endif
 
-# Stack size to the allocated to the Cortex-M main/exceptions stack. This
-# stack is used for processing interrupts and exceptions.
 ifeq ($(USE_EXCEPTIONS_STACKSIZE),)
   USE_EXCEPTIONS_STACKSIZE = 0x1000
 endif
 
-# use -j4 unless some value was specified
 NUMJOBS=${NUMJOBS:-" -j4 "}
 MAKEFLAGS += ${NUMJOBS} -r
-
-# less disk, more RAM
-# MAKEFLAGS += -pipe
 
 #
 # Architecture or project specific options
@@ -199,7 +159,9 @@ MAKEFLAGS += ${NUMJOBS} -r
 
 BOARD_DIR := ./$(BOARD_DIR)
 BOARDINC = $(BOARD_DIR)
+
 include $(BOARD_DIR)/board.mk
+
 BOARDCPPSRC += $(BOARDS_DIR)/board_id.cpp
 
 ifeq (,$(filter clean,$(MAKECMDGOALS)))
@@ -210,38 +172,27 @@ endif
 
 DDEFS += -DSHORT_BOARD_NAME=$(SHORT_BOARD_NAME)
 
-# TS-page guard flags (see [tag:ts_page_table]) are declared once in the board's
-# prepend.txt - the only input the .ini generator can see. Lift them into DDEFS here
-# so the firmware compiles with the same value and the .ini page table can never
-# diverge from the pages the firmware actually serves (a divergence makes the firmware
-# answer reads of a page the .ini still lists with out_of_range, and TunerStudio
-# retries that page until it drops the connection).
-# Keep the list in sync with the guardFlag column of TS_PAGES in TSProjectConsumer.java.
 TS_PAGE_GUARD_FLAGS = EFI_LTFT_CONTROL|EFI_LUA
+
 TS_PAGE_GUARD_DEFS := $(shell sed -nE 's/^#define[[:space:]]+($(TS_PAGE_GUARD_FLAGS))[[:space:]]+(TRUE|FALSE)[[:space:]]*$$/-D\1=\2/p' $(BOARD_DIR)/prepend.txt $(BOARD_DIR)/prepend_$(SHORT_BOARD_NAME).txt 2>/dev/null)
+
 DDEFS += $(TS_PAGE_GUARD_DEFS)
 
 # Include various ChibiOS mk files
-# Licensing files.
+
 include $(CHIBIOS)/os/license/license.mk
 
-# should be after 'board.mk'
-# includes ChibiOS's platform.mk for specified CPU
 include rusefi_rules.mk
 
-# Startup files.
 include $(CPU_STARTUP_DIR)
 
-# HAL-OSAL files (optional).
 include $(CHIBIOS_CONTRIB)/os/hal/hal.mk
 include $(CPU_PLATFORM)
 include $(CHIBIOS)/os/hal/osal/rt-nil/osal.mk
 
-# RTOS files (optional).
 include $(CHIBIOS)/os/rt/rt.mk
 include $(CHIBIOS)/os/common/ports/ARMv7-M/compilers/GCC/mk/port.mk
 
-# EX files (optional).
 ifeq ($(EFI_ONBOARD_MEMS_LIS2DW12),yes)
   DDEFS += -DEFI_ONBOARD_MEMS_LIS2DW12=TRUE
   include $(CHIBIOS)/os/ex/devices/ST/lis2dw12.mk
@@ -271,7 +222,6 @@ ifeq ($(USE_FATFS),yes)
   include $(CHIBIOS)/os/various/fatfs_bindings/fatfs.mk
 endif
 
-# Now include RusEFI mk files
 include console/binary/tunerstudio.mk
 
 ifeq ($(USE_FATFS),yes)
@@ -291,7 +241,6 @@ ifeq ($(EFI_ETHERNET),yes)
 endif
 
 ifeq ($(LWIP),yes)
-  # lwip.mk already includes evtimer.c in ALLCSRC.
   include $(CHIBIOS)/os/various/lwip_bindings/lwip.mk
 else
   ALLCSRC += $(CHIBIOS)/os/various/evtimer.c
@@ -302,7 +251,6 @@ include $(PROJECT_DIR)/common.mk
 include $(PROJECT_DIR)/controllers/modules/modules.mk
 
 ifeq ($(USE_OPENBLT),yes)
-  # Reserve start of flash for OpenBLT
   USE_OPT += -Wl,--defsym=HAS_BOOTLOADER=1
   DDEFS += -DEFI_USE_OPENBLT=TRUE
 endif
@@ -315,9 +263,6 @@ $(info CPU_HWLAYER:   $(CPU_HWLAYER))
 $(info CONFDIR:       $(CONFDIR))
 $(info LDSCRIPT:      $(LDSCRIPT))
 
-# C sources that can be compiled in ARM or THUMB mode depending on the global
-# setting.
-# gcc_version_check.c goes first to throw error as soon as possible
 CSRC = gcc_version_check.c \
   $(ALLCSRC) \
   $(BOARDSRC) \
@@ -332,8 +277,6 @@ CSRC = gcc_version_check.c \
   $(RUSEFI_LIB_C) \
   $(PROJECT_DIR)/hw_layer/main_hardfault.c
 
-# C++ sources that can be compiled in ARM or THUMB mode depending on the global
-# setting.
 CPPSRC = \
   $(ALLCPPSRC) \
   $(BOARDCPPSRC) \
@@ -346,30 +289,15 @@ CPPSRC = \
   rusefi.cpp \
   main.cpp
 
-# C sources to be compiled in ARM mode regardless of the global setting.
-# NOTE: Mixing ARM and THUMB mode enables the -mthumb-interwork compiler
-#       option that results in lower performance and larger code size.
 ACSRC =
-
-# C++ sources to be compiled in ARM mode regardless of the global setting.
-# NOTE: Mixing ARM and THUMB mode enables the -mthumb-interwork compiler
-#       option that results in lower performance and larger code size.
 ACPPSRC =
-
-# C sources to be compiled in THUMB mode regardless of the global setting.
 TCSRC =
-
-# C++ sources to be compiled in THUMB mode regardless of the global setting.
 TCPPSRC =
 
-# List ASM source files here
 ASMXSRC = $(ALLXASMSRC) \
   $(RUSEFIASM) \
   $(PROJECT_DIR)/hw_layer/main_hardfault_asm.S
 
-#
-# WARNING! order of variables is important here - for instance cypress own folders should go before default folders
-#
 INCDIR += \
   $(PCH_DIR) \
   $(BOARDINC) \
@@ -385,7 +313,6 @@ INCDIR += \
   $(PROJECT_DIR)/development/hw_layer \
   development/test \
   $(CHIBIOS_CONTRIB)/os/various
-# contrib/os/various must go at the end because it also contains pid.h which conflicts with our pid.h
 
 #
 # Project, sources and paths
@@ -404,11 +331,7 @@ endif
 CC   = $(TRGT)gcc
 CPPC = $(TRGT)g++
 
-# Enable loading with g++ only if you need C++ runtime support.
-# NOTE: You can use C++ even without C++ support if you are careful. C++
-# runtime support makes code size explode.
 LD   = $(CC)
-#LD   = $(CPPC)
 
 CP   = $(TRGT)objcopy
 AS   = $(CC) -x assembler-with-cpp
@@ -421,25 +344,19 @@ BIN  = $(CP) -O binary
 
 ifneq ($(BOARD_IMAGE_SCRIPT),)
 PYTHON ?= python3
-# Addressed images only: a raw binary cannot preserve holes between CRC domains.
+
 HEX = $(PYTHON) $(BOARD_IMAGE_SCRIPT) --format hex
 BIN = $(PYTHON) $(BOARD_IMAGE_SCRIPT) --format bin
+
 override OUTFILES = $(BUILDDIR)/$(PROJECT).elf $(BUILDDIR)/$(PROJECT).hex \
   $(BUILDDIR)/$(PROJECT).srec $(BUILDDIR)/$(PROJECT).dmp $(BUILDDIR)/$(PROJECT).list
 endif
 
-# for srec files see bundle.mk
-
-# ARM-specific options here
 AOPT =
 
-# THUMB-specific options here
 TOPT = -mthumb -DTHUMB
 
-# Define C warning options here
 CWARN = -Wall -Wextra -Wstrict-prototypes
-
-# Define C++ warning options here
 CPPWARN = -Wall -Wextra
 
 #
@@ -450,19 +367,14 @@ CPPWARN = -Wall -Wextra
 # Start of user section
 #
 
-# List all user C define here, like -D_DEBUG=1
 UDEFS =
 
-# Define ASM defines here
 UADEFS =
 
-# List all user directories here
 UINCDIR =
 
-# List the user directory to look for the libraries here
 ULIBDIR =
 
-# List all user libraries here
 ULIBS = -lm --specs=nano.specs -Wl,--sort-section=alignment
 
 #
@@ -479,12 +391,10 @@ endif
 
 include target_sentinel.mk
 
-# this one would include ../java_tools/java_tools.mk for gradlew for config and console and plugin jars
 include rusefi_config.mk
 
 include docs_enums.mk
 
-# Enable precompiled header
 include rusefi_pch.mk
 
 include bundle.mk
